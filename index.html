@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure File Encryption/Decryption Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #e0e7ff;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --success-hover: #059669;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --bg-light: #f9fafb;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            flex: 1;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            background-color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            background-color: var(--primary-light);
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .tab:hover:not(.active) {
+            background-color: #f3f4f6;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .file-input-container {
+            position: relative;
+            border: 2px dashed var(--border);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-container:hover {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .file-input-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .file-name {
+            margin-top: 1rem;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+        }
+
+        .btn-success:hover {
+            background-color: var(--success-hover);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            margin: 1rem 0;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--primary-light);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid var(--success);
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border-left: 4px solid var(--danger);
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: var(--border);
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background-color: var(--primary);
+            border-radius: 0.5rem;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        footer {
+            background-color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            color: var(--text-light);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+                margin: 1rem auto;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            h2 {
+                font-size: 1.3rem;
+            }
+        }
+
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/material-design-icons/3.0.1/iconfont/material-icons.min.css" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>Secure File Encryption/Decryption Tool</h1>
+        <p>Protect your sensitive files with military-grade encryption</p>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="encrypt">Encrypt Files</div>
+            <div class="tab" data-tab="decrypt">Decrypt Files</div>
+            <div class="tab" data-tab="about">About</div>
+        </div>
+
+        <div id="encrypt-tab" class="tab-content active">
+            <h2>Encrypt Your Files</h2>
+            <div class="alert alert-success" id="encrypt-success">
+                File encrypted successfully! Download will start automatically.
+            </div>
+            <div class="alert alert-error" id="encrypt-error">
+                Error encrypting file. Please try again.
+            </div>
+            <div class="card">
+                <div class="form-group">
+                    <label for="encrypt-file">Select File to Encrypt</label>
+                    <div class="file-input-container" id="encrypt-file-container">
+                        <div class="file-input-icon">
+                            <i class="material-icons">cloud_upload</i>
+                        </div>
+                        <p>Drag & drop your file here or click to browse</p>
+                        <input type="file" id="encrypt-file">
+                        <div class="file-name" id="encrypt-file-name"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="encrypt-password">Password</label>
+                    <div class="password-container">
+                        <input type="password" id="encrypt-password" placeholder="Enter a strong password">
+                        <span class="toggle-password" data-target="encrypt-password">
+                            <i class="material-icons">visibility_off</i>
+                        </span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-encrypt-password">Confirm Password</label>
+                    <div class="password-container">
+                        <input type="password" id="confirm-encrypt-password" placeholder="Confirm your password">
+                        <span class="toggle-password" data-target="confirm-encrypt-password">
+                            <i class="material-icons">visibility_off</i>
+                        </span>
+                    </div>
+                </div>
+                <div class="progress-container" id="encrypt-progress-container">
+                    <div class="progress-bar" id="encrypt-progress-bar"></div>
+                </div>
+                <div class="loading" id="encrypt-loading">
+                    <div class="spinner"></div>
+                </div>
+                <button class="btn btn-success btn-block" id="encrypt-btn" disabled>
+                    <i class="material-icons">lock</i> Encrypt File
+                </button>
+            </div>
+        </div>
+
+        <div id="decrypt-tab" class="tab-content">
+            <h2>Decrypt Your Files</h2>
+            <div class="alert alert-success" id="decrypt-success">
+                File decrypted successfully! Download will start automatically.
+            </div>
+            <div class="alert alert-error" id="decrypt-error">
+                Error decrypting file. Please check your password and try again.
+            </div>
+            <div class="card">
+                <div class="form-group">
+                    <label for="decrypt-file">Select Encrypted File</label>
+                    <div class="file-input-container" id="decrypt-file-container">
+                        <div class="file-input-icon">
+                            <i class="material-icons">cloud_upload</i>
+                        </div>
+                        <p>Drag & drop your encrypted file here or click to browse</p>
+                        <input type="file" id="decrypt-file">
+                        <div class="file-name" id="decrypt-file-name"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="decrypt-password">Password</label>
+                    <div class="password-container">
+                        <input type="password" id="decrypt-password" placeholder="Enter the decryption password">
+                        <span class="toggle-password" data-target="decrypt-password">
+                            <i class="material-icons">visibility_off</i>
+                        </span>
+                    </div>
+                </div>
+                <div class="progress-container" id="decrypt-progress-container">
+                    <div class="progress-bar" id="decrypt-progress-bar"></div>
+                </div>
+                <div class="loading" id="decrypt-loading">
+                    <div class="spinner"></div>
+                </div>
+                <button class="btn btn-primary btn-block" id="decrypt-btn" disabled>
+                    <i class="material-icons">lock_open</i> Decrypt File
+                </button>
+            </div>
+        </div>
+
+        <div id="about-tab" class="tab-content">
+            <h2>About This Tool</h2>
+            <div class="card">
+                <p>This secure file encryption/decryption tool uses AES-256 encryption, one of the most secure encryption algorithms available. Your files never leave your browser - all encryption and decryption happens locally on your device.</p>
+                
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="material-icons">security</i>
+                        </div>
+                        <h3>Military-Grade Encryption</h3>
+                        <p>Uses AES-256 encryption algorithm to secure your files with the highest level of protection.</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="material-icons">cloud_off</i>
+                        </div>
+                        <h3>100% Private</h3>
+                        <p>All encryption happens locally in your browser. Your files and passwords never leave your device.</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="material-icons">devices</i>
+                        </div>
+                        <h3>Works Everywhere</h3>
+                        <p>Responsive design works on desktops, tablets, and mobile devices with any modern browser.</p>
+                    </div>
+                </div>
+
+                <h3>How to Use This Tool</h3>
+                <ol>
+                    <li><strong>Encrypting Files:</strong> Select a file, enter a strong password (and remember it!), and click Encrypt.</li>
+                    <li><strong>Decrypting Files:</strong> Select the encrypted file, enter the correct password, and click Decrypt.</li>
+                </ol>
+
+                <div class="text-center" style="margin-top: 2rem;">
+                    <p><strong>Important:</strong> If you forget your password, there is no way to recover your encrypted files!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 Secure File Encryption Tool | Developed for Micro IT Internship - Project 13</p>
+    </footer>
+
+    <script>
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+                
+                document.querySelectorAll('.alert').forEach(alert => {
+                    alert.style.display = 'none';
+                });
+            });
+        });
+
+        function setupFileInput(inputId, containerId, fileNameId, btnId) {
+            const fileInput = document.getElementById(inputId);
+            const container = document.getElementById(containerId);
+            const fileName = document.getElementById(fileNameId);
+            const btn = document.getElementById(btnId);
+            
+            container.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                container.style.borderColor = 'var(--primary)';
+                container.style.backgroundColor = 'var(--primary-light)';
+            });
+            
+            container.addEventListener('dragleave', () => {
+                container.style.borderColor = 'var(--border)';
+                container.style.backgroundColor = '';
+            });
+            
+            container.addEventListener('drop', (e) => {
+                e.preventDefault();
+                container.style.borderColor = 'var(--border)';
+                container.style.backgroundColor = '';
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelection(fileInput, fileName, btn);
+                }
+            });
+            
+            fileInput.addEventListener('change', () => {
+                handleFileSelection(fileInput, fileName, btn);
+            });
+        }
+
+        function handleFileSelection(fileInput, fileName, btn) {
+            if (fileInput.files.length > 0) {
+                fileName.textContent = fileInput.files[0].name;
+                btn.disabled = false;
+            } else {
+                fileName.textContent = '';
+                btn.disabled = true;
+            }
+        }
+
+        document.querySelectorAll('.toggle-password').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                const targetId = toggle.getAttribute('data-target');
+                const passwordInput = document.getElementById(targetId);
+                const icon = toggle.querySelector('i');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.textContent = 'visibility';
+                } else {
+                    passwordInput.type = 'password';
+                    icon.textContent = 'visibility_off';
+                }
+            });
+        });
+
+        async function encryptFile() {
+            const fileInput = document.getElementById('encrypt-file');
+            const password = document.getElementById('encrypt-password').value;
+            const confirmPassword = document.getElementById('confirm-encrypt-password').value;
+            const loading = document.getElementById('encrypt-loading');
+            const successAlert = document.getElementById('encrypt-success');
+            const errorAlert = document.getElementById('encrypt-error');
+            const progressContainer = document.getElementById('encrypt-progress-container');
+            const progressBar = document.getElementById('encrypt-progress-bar');
+            
+            successAlert.style.display = 'none';
+            errorAlert.style.display = 'none';
+            
+            if (!fileInput.files.length) {
+                errorAlert.textContent = 'Please select a file to encrypt.';
+                errorAlert.style.display = 'block';
+                return;
+            }
+            
+            if (!password) {
+                errorAlert.textContent = 'Please enter a password.';
+                errorAlert.style.display = 'block';
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                errorAlert.textContent = 'Passwords do not match.';
+                errorAlert.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const file = fileInput.files[0];
+                
+                loading.style.display = 'flex';
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                
+                const arrayBuffer = await readFileAsArrayBuffer(file);
+                
+                progressBar.style.width = '30%';
+                
+                const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer);
+                
+                progressBar.style.width = '50%';
+                
+                const encrypted = CryptoJS.AES.encrypt(wordArray, password).toString();
+                
+                progressBar.style.width = '80%';
+                
+                const blob = new Blob([encrypted], { type: 'application/encrypted' });
+                saveAs(blob, `${file.name}.enc`);
+                
+                progressBar.style.width = '100%';
+                successAlert.style.display = 'block';
+                
+                document.getElementById('encrypt-file-name').textContent = '';
+                document.getElementById('encrypt-file').value = '';
+                document.getElementById('encrypt-password').value = '';
+                document.getElementById('confirm-encrypt-password').value = '';
+                document.getElementById('encrypt-btn').disabled = true;
+                
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 2000);
+            } catch (error) {
+                console.error('Encryption error:', error);
+                errorAlert.textContent = 'Error encrypting file: ' + error.message;
+                errorAlert.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        async function decryptFile() {
+            const fileInput = document.getElementById('decrypt-file');
+            const password = document.getElementById('decrypt-password').value;
+            const loading = document.getElementById('decrypt-loading');
+            const successAlert = document.getElementById('decrypt-success');
+            const errorAlert = document.getElementById('decrypt-error');
+            const progressContainer = document.getElementById('decrypt-progress-container');
+            const progressBar = document.getElementById('decrypt-progress-bar');
+            
+            successAlert.style.display = 'none';
+            errorAlert.style.display = 'none';
+            
+            if (!fileInput.files.length) {
+                errorAlert.textContent = 'Please select a file to decrypt.';
+                errorAlert.style.display = 'block';
+                return;
+            }
+            
+            if (!password) {
+                errorAlert.textContent = 'Please enter the decryption password.';
+                errorAlert.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const file = fileInput.files[0];
+                
+                loading.style.display = 'flex';
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                
+                const encryptedText = await readFileAsText(file);
+                
+                progressBar.style.width = '40%';
+                
+                const decrypted = CryptoJS.AES.decrypt(encryptedText, password);
+                
+                progressBar.style.width = '70%';
+                
+                const typedArray = convertWordArrayToUint8Array(decrypted);
+                
+                progressBar.style.width = '90%';
+                
+                const blob = new Blob([typedArray]);
+                
+                let originalFileName = file.name;
+                if (originalFileName.endsWith('.enc')) {
+                    originalFileName = originalFileName.slice(0, -4);
+                }
+                
+                saveAs(blob, originalFileName);
+                
+                progressBar.style.width = '100%';
+                successAlert.style.display = 'block';
+                
+                document.getElementById('decrypt-file-name').textContent = '';
+                document.getElementById('decrypt-file').value = '';
+                document.getElementById('decrypt-password').value = '';
+                document.getElementById('decrypt-btn').disabled = true;
+                
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 2000);
+            } catch (error) {
+                console.error('Decryption error:', error);
+                errorAlert.textContent = 'Error decrypting file. Please check your password and try again.';
+                errorAlert.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target.result);
+                reader.onerror = (error) => reject(error);
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target.result);
+                reader.onerror = (error) => reject(error);
+                reader.readAsText(file);
+            });
+        }
+
+        function convertWordArrayToUint8Array(wordArray) {
+            const words = wordArray.words;
+            const sigBytes = wordArray.sigBytes;
+            const u8 = new Uint8Array(sigBytes);
+            
+            for (let i = 0; i < sigBytes; i++) {
+                const byte = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+                u8[i] = byte;
+            }
+            
+            return u8;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupFileInput('encrypt-file', 'encrypt-file-container', 'encrypt-file-name', 'encrypt-btn');
+            setupFileInput('decrypt-file', 'decrypt-file-container', 'decrypt-file-name', 'decrypt-btn');
+            
+            document.getElementById('encrypt-btn').addEventListener('click', encryptFile);
+            
+            document.getElementById('decrypt-btn').addEventListener('click', decryptFile);
+            
+            const encryptPassword = document.getElementById('encrypt-password');
+            const confirmEncryptPassword = document.getElementById('confirm-encrypt-password');
+            
+            confirmEncryptPassword.addEventListener('input', () => {
+                if (encryptPassword.value && confirmEncryptPassword.value) {
+                    if (encryptPassword.value !== confirmEncryptPassword.value) {
+                        confirmEncryptPassword.style.borderColor = 'var(--danger)';
+                    } else {
+                        confirmEncryptPassword.style.borderColor = 'var(--success)';
+                    }
+                } else {
+                    confirmEncryptPassword.style.borderColor = 'var(--border)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
